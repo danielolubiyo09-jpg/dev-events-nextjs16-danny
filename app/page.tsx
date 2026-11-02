@@ -2,9 +2,9 @@ import ExploreBtn from "@/components/ExploreBtn";
 import EventCard from "@/components/EventCard";
 import { IEvent } from "@/database";
 import { cacheLife } from "next/cache";
+import connectDB from "@/lib/mongodb";
+import { Event } from "@/database";
 
-
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\s/g, '')?.replace(/\/$/, '') || "http://localhost:3000";
 
 const Page = async () => {
   'use cache'
@@ -12,15 +12,10 @@ const Page = async () => {
   let events: IEvent[] = [];
   
   try {
-    const response = await fetch(`${BASE_URL}/api/events`, {
-      cache: "no-store"
-    });
-    if (response.ok) {
-      const data = await response.json();
-      events = data.events || [];
-    }
+    await connectDB();
+    events = await Event.find().sort({ createdAt: -1 }).lean();
   } catch (error) {
-    console.error("Failed to fetch events:", error);
+    throw error;
   }
 
   return (
@@ -39,7 +34,7 @@ const Page = async () => {
 
         <ul className="events">
           {events.length > 0 ? (
-            events.map((event: IEvent) => (
+            events.map((event: any) => (
               <li key={event._id?.toString() || event.slug} className="list-none">
                   <EventCard {...event} />
               </li> 
